@@ -15,6 +15,8 @@ export interface Order {
     gender: 'male' | 'female';
     measurements: Record<string, string>;
     garment_options?: Record<string, boolean>;
+    tailor_name?: string;
+    ai_suggestions?: string;
 }
 
 export const femaleMeasurements = {

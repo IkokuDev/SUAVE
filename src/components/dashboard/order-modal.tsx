@@ -35,6 +35,7 @@ const orderSchema = z.object({
   gender: z.enum(['male', 'female']),
   measurements: z.record(z.string()),
   garment_options: z.record(z.boolean()).optional(),
+  tailor_name: z.string().optional(),
 });
 
 type OrderFormData = z.infer<typeof orderSchema>;
@@ -49,7 +50,7 @@ interface OrderModalProps {
 const OrderModal = ({ isOpen, setIsOpen, clientId, order }: OrderModalProps) => {
   const { toast } = useToast();
   const [gender, setGender] = useState<'male' | 'female'>(order?.gender || 'male');
-  const [aiSuggestion, setAiSuggestion] = useState('');
+  const [aiSuggestion, setAiSuggestion] = useState(order?.ai_suggestions || '');
   const [isAiLoading, startAiTransition] = useTransition();
 
   const form = useForm<OrderFormData>({
@@ -62,6 +63,7 @@ const OrderModal = ({ isOpen, setIsOpen, clientId, order }: OrderModalProps) => 
       gender: order?.gender || 'male',
       measurements: order?.measurements || (gender === 'male' ? maleMeasurements : femaleMeasurements),
       garment_options: order?.garment_options || maleGarmentOptions,
+      tailor_name: order?.tailor_name || '',
     },
   });
   
@@ -74,6 +76,8 @@ const OrderModal = ({ isOpen, setIsOpen, clientId, order }: OrderModalProps) => 
         setValue('gender', order.gender);
         setValue('measurements', order.measurements);
         setValue('garment_options', order.garment_options || (order.gender === 'male' ? maleGarmentOptions : {}));
+        setValue('tailor_name', order.tailor_name || '');
+        setAiSuggestion(order.ai_suggestions || '');
     }
   }, [order, setValue]);
 
@@ -106,7 +110,7 @@ const OrderModal = ({ isOpen, setIsOpen, clientId, order }: OrderModalProps) => 
   }
 
   const onSubmit = async (data: OrderFormData) => {
-    const orderData = { ...data };
+    const orderData = { ...data, ai_suggestions: aiSuggestion };
     try {
       if (order) {
         await setDoc(doc(db, 'clients', clientId, 'orders', order.id), orderData);
@@ -132,7 +136,7 @@ const OrderModal = ({ isOpen, setIsOpen, clientId, order }: OrderModalProps) => 
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="flex-grow flex flex-col overflow-hidden">
           <ScrollArea className="flex-grow p-6 pr-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                 <div>
                   <Label htmlFor="date-in">Date In</Label>
                   <Input id="date-in" type="date" {...register('date_in')} />
@@ -143,7 +147,12 @@ const OrderModal = ({ isOpen, setIsOpen, clientId, order }: OrderModalProps) => 
                   <Input id="date-out" type="date" {...register('date_out')} />
                   {errors.date_out && <p className="text-red-500 text-xs mt-1">{errors.date_out.message}</p>}
                 </div>
-                <div className="md:col-span-2">
+                <div>
+                    <Label htmlFor="tailor-name">Tailor Name</Label>
+                    <Input id="tailor-name" {...register('tailor_name')} placeholder="Enter tailor's name"/>
+                    {errors.tailor_name && <p className="text-red-500 text-xs mt-1">{errors.tailor_name.message as string}</p>}
+                </div>
+                <div className="md:col-span-3">
                   <Label htmlFor="order-status">Status</Label>
                   <Controller
                     name="status"
