@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { createUserDocument } from '@/app/actions';
 
 const LoginScreen = () => {
   const [email, setEmail] = useState('');
@@ -41,17 +40,11 @@ const LoginScreen = () => {
       return;
     }
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const result = await createUserDocument(userCredential.user.uid);
-
-      if (result.success) {
-        toast({
-          title: 'Account Created!',
-          description: `You have been registered as a ${result.role}.`,
-        });
-      } else {
-        setError(result.error || 'Failed to set up your account details.');
-      }
+      await createUserWithEmailAndPassword(auth, email, password);
+      toast({
+        title: 'Account Created!',
+        description: `You can now log in.`,
+      });
     } catch (err: any) {
       setError(err.message);
     } finally {

@@ -1,7 +1,5 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import type { Order } from '@/lib/definitions';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '../ui/skeleton';
@@ -28,23 +26,32 @@ const OrderList = ({ clientId, onEditOrder }: OrderListProps) => {
   useEffect(() => {
     if (!clientId) return;
 
-    setLoading(true);
-    const ordersRef = collection(db, 'clients', clientId, 'orders');
-    const q = query(ordersRef, orderBy('date_in', 'desc'));
+    const loadOrders = () => {
+      setLoading(true);
+      try {
+          const storedOrders = localStorage.getItem(`orders-${clientId}`);
+          if (storedOrders) {
+              const parsedOrders = JSON.parse(storedOrders);
+              parsedOrders.sort((a: Order, b: Order) => new Date(b.date_in).getTime() - new Date(a.date_in).getTime());
+              setOrders(parsedOrders);
+          } else {
+              setOrders([]);
+          }
+      } catch (error) {
+          console.error("Failed to load orders from localStorage", error);
+          setOrders([]);
+      } finally {
+          setLoading(false);
+      }
+    };
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const ordersData: Order[] = [];
-      snapshot.forEach(doc => {
-        ordersData.push({ id: doc.id, ...doc.data() } as Order);
-      });
-      setOrders(ordersData);
-      setLoading(false);
-    }, (error) => {
-      console.error("Error fetching orders:", error);
-      setLoading(false);
-    });
+    loadOrders();
 
-    return () => unsubscribe();
+    const eventName = `orders-updated-${clientId}`;
+    window.addEventListener(eventName, loadOrders);
+    return () => {
+        window.removeEventListener(eventName, loadOrders);
+    };
   }, [clientId]);
 
   if (loading) {

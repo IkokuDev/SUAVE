@@ -1,8 +1,6 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import type { Client } from '@/lib/definitions';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -22,20 +20,29 @@ const ClientListPanel = ({ setSelectedClient, selectedClientId }: ClientListPane
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    const q = query(collection(db, 'clients'), orderBy('name'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const clientsData: Client[] = [];
-      snapshot.forEach((doc) => {
-        clientsData.push({ id: doc.id, ...doc.data() } as Client);
-      });
-      setClients(clientsData);
-      setLoading(false);
-    }, (error) => {
-      console.error("Error fetching clients: ", error);
-      setLoading(false);
-    });
+    const loadClients = () => {
+        setLoading(true);
+        try {
+            const storedClients = localStorage.getItem('clients');
+            if (storedClients) {
+                setClients(JSON.parse(storedClients));
+            } else {
+                setClients([]);
+            }
+        } catch (error) {
+            console.error("Failed to load clients from localStorage", error);
+            setClients([]);
+        } finally {
+            setLoading(false);
+        }
+    }
 
-    return () => unsubscribe();
+    loadClients();
+
+    window.addEventListener('clients-updated', loadClients);
+    return () => {
+        window.removeEventListener('clients-updated', loadClients);
+    };
   }, []);
   
   const filteredClients = useMemo(() => {

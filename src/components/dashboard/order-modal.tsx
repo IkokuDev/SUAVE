@@ -3,8 +3,6 @@ import { useEffect, useState, useTransition } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { addDoc, collection, doc, setDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import type { Order } from '@/lib/definitions';
 import { maleMeasurements, femaleMeasurements, maleGarmentOptions } from '@/lib/definitions';
 import {
@@ -112,17 +110,25 @@ const OrderModal = ({ isOpen, setIsOpen, clientId, order }: OrderModalProps) => 
   const onSubmit = async (data: OrderFormData) => {
     const orderData = { ...data, ai_suggestions: aiSuggestion };
     try {
-      if (order) {
-        await setDoc(doc(db, 'clients', clientId, 'orders', order.id), orderData);
-        toast({ title: 'Success', description: 'Order updated successfully.' });
-      } else {
-        await addDoc(collection(db, 'clients', clientId, 'orders'), orderData);
-        toast({ title: 'Success', description: 'Order created successfully.' });
-      }
-      setIsOpen(false);
+        const storageKey = `orders-${clientId}`;
+        const storedOrders = localStorage.getItem(storageKey);
+        let orders = storedOrders ? JSON.parse(storedOrders) : [];
+
+        if (order) { // Editing existing order
+            orders = orders.map((o: Order) => o.id === order.id ? { ...orderData, id: order.id, ai_suggestions: aiSuggestion } : o);
+            toast({ title: 'Success', description: 'Order updated successfully (locally).' });
+        } else { // Creating new order
+            const newOrder = { ...orderData, id: new Date().toISOString() };
+            orders.push(newOrder);
+            toast({ title: 'Success', description: 'Order created successfully (locally).' });
+        }
+        
+        localStorage.setItem(storageKey, JSON.stringify(orders));
+        window.dispatchEvent(new Event(`orders-updated-${clientId}`));
+        setIsOpen(false);
     } catch (error) {
-      console.error('Error saving order:', error);
-      toast({ title: 'Error', description: 'Failed to save order.', variant: 'destructive' });
+        console.error('Error saving order to localStorage:', error);
+        toast({ title: 'Error', description: 'Failed to save order.', variant: 'destructive' });
     }
   };
 

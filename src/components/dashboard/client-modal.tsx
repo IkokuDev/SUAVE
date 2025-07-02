@@ -2,8 +2,6 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { addDoc, collection } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { useAuth } from '@/hooks/use-auth';
 import {
   Dialog,
@@ -15,7 +13,6 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 
@@ -44,15 +41,24 @@ const ClientModal = ({ isOpen, setIsOpen }: ClientModalProps) => {
         return;
     }
     try {
-      await addDoc(collection(db, "clients"), {
-        ...values,
-        createdBy: user.uid,
-      });
-      toast({ title: "Success", description: "Client added successfully." });
+      const storedClients = localStorage.getItem('clients');
+      const clients = storedClients ? JSON.parse(storedClients) : [];
+      
+      const newClient = {
+          ...values,
+          id: new Date().toISOString(), // simple unique ID
+          createdBy: user.uid,
+      };
+
+      clients.push(newClient);
+      localStorage.setItem('clients', JSON.stringify(clients));
+
+      toast({ title: "Success", description: "Client added successfully (locally)." });
+      window.dispatchEvent(new Event('clients-updated'));
       setIsOpen(false);
       form.reset();
     } catch (error) {
-      console.error("Error adding client: ", error);
+      console.error("Error adding client to localStorage: ", error);
       toast({ title: "Error", description: "Failed to add client.", variant: "destructive" });
     }
   };
