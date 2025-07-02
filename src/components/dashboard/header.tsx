@@ -1,6 +1,4 @@
 'use client';
-import { signOut } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
@@ -16,7 +14,7 @@ const Header = () => {
           <p className="font-semibold text-white">{user?.email || 'Anonymous'}</p>
           <p className="text-xs text-primary uppercase">{userRole}</p>
         </div>
-        <Button variant="destructive" onClick={() => signOut(auth)}>
+        <Button variant="destructive" onClick={() => { /* Logout is disabled while auth is bypassed */ }}>
           <LogOut className="mr-2 h-4 w-4" />
           Logout
         </Button>
