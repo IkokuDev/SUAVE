@@ -6,10 +6,11 @@ import { Button } from '@/components/ui/button';
 import OrderList from './order-list';
 import OrderModal from './order-modal';
 import DeleteConfirmationDialog from './delete-confirmation-dialog';
-import { Trash2 } from 'lucide-react';
+import { Trash2, ArrowLeft } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { collection, query, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ClientDetailsPanelProps {
   client: Client;
@@ -22,6 +23,7 @@ const ClientDetailsPanel = ({ client, setSelectedClient }: ClientDetailsPanelPro
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
 
   const handleNewOrder = () => {
@@ -54,7 +56,7 @@ const ClientDetailsPanel = ({ client, setSelectedClient }: ClientDetailsPanelPro
       setIsDeleteDialogOpen(false);
     } catch (error) {
       console.error("Error deleting client: ", error);
-      toast({ title: "Error", description: "Failed to delete client.", variant: "destructive" });
+      toast({ title: "Error", description: "Failed to delete client. Please check your Firestore security rules in the Firebase console.", variant: "destructive" });
     } finally {
       setIsDeleting(false);
     }
@@ -63,12 +65,19 @@ const ClientDetailsPanel = ({ client, setSelectedClient }: ClientDetailsPanelPro
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-shrink-0 flex justify-between items-center mb-4 pb-4 border-b border-primary">
-        <div>
-          <h2 className="text-3xl font-bold">{client.name}</h2>
-          <p className="text-muted-foreground">{client.phone || ''} | {client.email || ''}</p>
+      <div className="flex-shrink-0 flex flex-col sm:flex-row justify-between sm:items-center mb-4 pb-4 border-b border-primary gap-4">
+        <div className="flex items-center gap-4">
+          {isMobile && (
+            <Button variant="ghost" size="icon" onClick={() => setSelectedClient(null)} aria-label="Go back to client list">
+              <ArrowLeft />
+            </Button>
+          )}
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-bold">{client.name}</h2>
+            <p className="text-sm text-muted-foreground break-all">{client.phone || ''} {client.phone && client.email && `|`} {client.email || ''}</p>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 self-end sm:self-auto">
             <Button onClick={handleNewOrder} className="font-semibold transition hover:-translate-y-0.5">New Order</Button>
             <Button onClick={() => setIsDeleteDialogOpen(true)} variant="destructive" size="icon" aria-label="Delete Client">
                 <Trash2 />

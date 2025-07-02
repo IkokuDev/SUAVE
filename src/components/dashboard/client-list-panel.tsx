@@ -50,7 +50,7 @@ const ClientListPanel = ({ setSelectedClient, selectedClientId }: ClientListPane
   }, [clients, searchQuery]);
 
   return (
-    <aside className="col-span-12 md:col-span-4 row-span-11 bg-card rounded-lg p-4 flex flex-col shadow-lg">
+    <div className="h-full flex flex-col">
       <div className="flex-shrink-0 mb-4">
         <h2 className="text-xl font-bold mb-2">Clients</h2>
         <div className="flex space-x-2">
@@ -91,7 +91,7 @@ const ClientListPanel = ({ setSelectedClient, selectedClientId }: ClientListPane
         )}
       </div>
       <ClientModal isOpen={isModalOpen} setIsOpen={setIsModalOpen} />
-    </aside>
+    </div>
   );
 };
 

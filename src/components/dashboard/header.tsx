@@ -2,8 +2,8 @@
 
 const Header = () => {
   return (
-    <header className="col-span-12 row-span-1 bg-card rounded-lg flex items-center justify-between p-4 shadow-lg">
-      <h1 className="text-2xl font-bold">Suave Client & Order Management Ver. 2.0.0</h1>
+    <header className="md:col-span-12 md:row-span-1 bg-card rounded-lg flex items-center justify-between p-4 shadow-lg flex-shrink-0">
+      <h1 className="text-lg sm:text-2xl font-bold">Suave Manager</h1>
     </header>
   );
 };

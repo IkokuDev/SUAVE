@@ -285,19 +285,19 @@ const OrderModal = ({ isOpen, setIsOpen, clientId, order }: OrderModalProps) => 
                 </div>
               )}
           </ScrollArea>
-          <DialogFooter className="flex-shrink-0 p-6 border-t border-gray-700 flex justify-between w-full">
-            <div>
+          <DialogFooter className="flex-shrink-0 p-6 border-t border-gray-700 flex flex-col-reverse sm:flex-row sm:justify-between items-center gap-4 sm:gap-0 w-full">
+            <div className="w-full sm:w-auto">
                  {order && (
-                    <Button type="button" variant="destructive" onClick={() => setIsDeleteDialogOpen(true)} className="flex items-center gap-2">
+                    <Button type="button" variant="destructive" onClick={() => setIsDeleteDialogOpen(true)} className="flex items-center gap-2 w-full sm:w-auto justify-center">
                         <Trash2 size={16}/> Delete Order
                     </Button>
                  )}
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 w-full sm:w-auto">
                 <DialogClose asChild>
-                    <Button type="button" variant="secondary">Cancel</Button>
+                    <Button type="button" variant="secondary" className="flex-1 sm:flex-auto">Cancel</Button>
                 </DialogClose>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button type="submit" disabled={isSubmitting} className="flex-1 sm:flex-auto">
                   {isSubmitting ? 'Saving...' : (order ? 'Save Changes' : 'Save Order')}
                 </Button>
             </div>
