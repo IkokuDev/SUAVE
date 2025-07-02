@@ -7,9 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import ClientModal from './client-modal';
 import { Skeleton } from '../ui/skeleton';
-import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';
 
 interface ClientListPanelProps {
   setSelectedClient: (client: Client) => void;
@@ -17,23 +16,15 @@ interface ClientListPanelProps {
 }
 
 const ClientListPanel = ({ setSelectedClient, selectedClientId }: ClientListPanelProps) => {
-  const { user } = useAuth();
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    if (!user) {
-        setClients([]);
-        setLoading(false);
-        return;
-    };
-
     setLoading(true);
     const q = query(
         collection(db, "clients"), 
-        where("createdBy", "==", user.uid),
         orderBy("name")
     );
 
@@ -50,7 +41,7 @@ const ClientListPanel = ({ setSelectedClient, selectedClientId }: ClientListPane
     });
 
     return () => unsubscribe();
-  }, [user]);
+  }, []);
   
   const filteredClients = useMemo(() => {
     return clients.filter(client =>

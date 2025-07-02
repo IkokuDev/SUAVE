@@ -3,7 +3,7 @@ export interface Client {
     name: string;
     phone?: string;
     email?: string;
-    createdBy: string;
+    createdBy?: string;
 }
 
 export interface Order {

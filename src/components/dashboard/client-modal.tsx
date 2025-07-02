@@ -2,7 +2,6 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useAuth } from '@/hooks/use-auth';
 import {
   Dialog,
   DialogContent,
@@ -30,7 +29,6 @@ interface ClientModalProps {
 }
 
 const ClientModal = ({ isOpen, setIsOpen }: ClientModalProps) => {
-  const { user } = useAuth();
   const { toast } = useToast();
   const form = useForm<z.infer<typeof clientSchema>>({
     resolver: zodResolver(clientSchema),
@@ -38,24 +36,15 @@ const ClientModal = ({ isOpen, setIsOpen }: ClientModalProps) => {
   });
 
   const onSubmit = async (values: z.infer<typeof clientSchema>) => {
-    if (!user) {
-        toast({ title: "Error", description: "You must be logged in to add a client.", variant: "destructive" });
-        return;
-    }
     try {
-      const newClient = {
-          ...values,
-          createdBy: user.uid,
-      };
-
-      await addDoc(collection(db, "clients"), newClient);
+      await addDoc(collection(db, "clients"), values);
 
       toast({ title: "Success", description: "Client added successfully." });
       setIsOpen(false);
       form.reset();
     } catch (error) {
       console.error("Error adding client: ", error);
-      toast({ title: "Error", description: "Failed to add client.", variant: "destructive" });
+      toast({ title: "Error", description: "Failed to add client. Make sure your Firebase API keys are correct.", variant: "destructive" });
     }
   };
 
