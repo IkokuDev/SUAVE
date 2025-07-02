@@ -22,10 +22,11 @@ import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '../ui/checkbox';
 import { getAiSuggestions } from '@/app/actions';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Trash2 } from 'lucide-react';
 import { Separator } from '../ui/separator';
 import { db } from '@/lib/firebase';
-import { collection, doc, addDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, addDoc, setDoc, deleteDoc } from 'firebase/firestore';
+import DeleteConfirmationDialog from './delete-confirmation-dialog';
 
 const orderSchema = z.object({
   order_name: z.string().nonempty("Order name is required."),
@@ -53,6 +54,8 @@ const OrderModal = ({ isOpen, setIsOpen, clientId, order }: OrderModalProps) => 
   const [gender, setGender] = useState<'male' | 'female'>(order?.gender || 'male');
   const [aiSuggestion, setAiSuggestion] = useState(order?.ai_suggestions || '');
   const [isAiLoading, startAiTransition] = useTransition();
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const form = useForm<OrderFormData>({
     resolver: zodResolver(orderSchema),
@@ -74,15 +77,36 @@ const OrderModal = ({ isOpen, setIsOpen, clientId, order }: OrderModalProps) => 
 
   useEffect(() => {
     if (order) {
-        setGender(order.gender);
-        setValue('order_name', order.order_name);
-        setValue('gender', order.gender);
-        setValue('measurements', order.measurements);
-        setValue('garment_options', order.garment_options || (order.gender === 'male' ? maleGarmentOptions : {}));
-        setValue('tailor_name', order.tailor_name || '');
-        setAiSuggestion(order.ai_suggestions || '');
+      reset({
+        order_name: order.order_name,
+        date_in: order.date_in,
+        date_out: order.date_out,
+        status: order.status,
+        instructions: order.instructions || '',
+        gender: order.gender,
+        measurements: order.measurements,
+        garment_options: order.garment_options || (order.gender === 'male' ? maleGarmentOptions : {}),
+        tailor_name: order.tailor_name || '',
+      });
+      setGender(order.gender);
+      setAiSuggestion(order.ai_suggestions || '');
+    } else {
+        // Reset form for new order
+        reset({
+            order_name: '',
+            date_in: new Date().toISOString().split('T')[0],
+            date_out: '',
+            status: 'Pending',
+            instructions: '',
+            gender: 'male',
+            measurements: maleMeasurements,
+            garment_options: maleGarmentOptions,
+            tailor_name: '',
+        });
+        setAiSuggestion('');
+        setGender('male');
     }
-  }, [order, setValue]);
+  }, [order, reset]);
 
 
   const handleGenderChange = (newGender: 'male' | 'female') => {
@@ -131,6 +155,23 @@ const OrderModal = ({ isOpen, setIsOpen, clientId, order }: OrderModalProps) => 
         toast({ title: 'Error', description: 'Failed to save order. Please check your Firestore security rules in the Firebase console.', variant: 'destructive' });
     }
   };
+  
+  const handleDeleteOrder = async () => {
+    if (!order) return;
+    setIsDeleting(true);
+    try {
+        await deleteDoc(doc(db, 'clients', clientId, 'orders', order.id));
+        toast({ title: "Success", description: "Order deleted successfully." });
+        setIsDeleteDialogOpen(false);
+        setIsOpen(false);
+    } catch(error) {
+        console.error("Error deleting order: ", error);
+        toast({ title: "Error", description: "Failed to delete order.", variant: "destructive" });
+    } finally {
+        setIsDeleting(false);
+    }
+  };
+
 
   const measurementFields = gender === 'male' ? maleMeasurements : femaleMeasurements;
   
@@ -244,15 +285,34 @@ const OrderModal = ({ isOpen, setIsOpen, clientId, order }: OrderModalProps) => 
                 </div>
               )}
           </ScrollArea>
-          <DialogFooter className="flex-shrink-0 p-6 border-t border-gray-700">
-            <DialogClose asChild>
-                <Button type="button" variant="secondary">Cancel</Button>
-            </DialogClose>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Saving...' : (order ? 'Save Changes' : 'Save Order')}
-            </Button>
+          <DialogFooter className="flex-shrink-0 p-6 border-t border-gray-700 flex justify-between w-full">
+            <div>
+                 {order && (
+                    <Button type="button" variant="destructive" onClick={() => setIsDeleteDialogOpen(true)} className="flex items-center gap-2">
+                        <Trash2 size={16}/> Delete Order
+                    </Button>
+                 )}
+            </div>
+            <div className="flex gap-2">
+                <DialogClose asChild>
+                    <Button type="button" variant="secondary">Cancel</Button>
+                </DialogClose>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? 'Saving...' : (order ? 'Save Changes' : 'Save Order')}
+                </Button>
+            </div>
           </DialogFooter>
         </form>
+         {order && (
+            <DeleteConfirmationDialog
+                isOpen={isDeleteDialogOpen}
+                setIsOpen={setIsDeleteDialogOpen}
+                itemName={order.order_name}
+                itemType="order"
+                onConfirm={handleDeleteOrder}
+                loading={isDeleting}
+            />
+        )}
       </DialogContent>
     </Dialog>
   );

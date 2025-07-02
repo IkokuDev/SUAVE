@@ -15,7 +15,7 @@ const Dashboard = () => {
       <ClientListPanel setSelectedClient={setSelectedClient} selectedClientId={selectedClient?.id || null}/>
       <main className="col-span-12 md:col-span-8 row-span-11 bg-card rounded-lg p-6 flex flex-col shadow-lg">
         {selectedClient ? (
-          <ClientDetailsPanel client={selectedClient} />
+          <ClientDetailsPanel client={selectedClient} setSelectedClient={setSelectedClient} />
         ) : (
           <WelcomePanel />
         )}
