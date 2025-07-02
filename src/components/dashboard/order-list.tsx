@@ -82,8 +82,11 @@ const OrderList = ({ clientId, onEditOrder }: OrderListProps) => {
           className="bg-accent p-4 rounded-lg mb-3 cursor-pointer hover:bg-secondary transition-colors"
           onClick={() => onEditOrder(order)}
         >
-          <div className="flex justify-between items-center">
-            <p className="font-bold text-white">Order - Due: {order.date_out}</p>
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="font-bold text-white">{order.order_name}</p>
+              <p className="text-sm text-muted-foreground">Due: {order.date_out}</p>
+            </div>
             <Badge 
               className={
                 `${order.status === 'Completed' || order.status === 'Ready for Pickup' ? 'bg-green-600' : 'bg-yellow-600'} text-white`

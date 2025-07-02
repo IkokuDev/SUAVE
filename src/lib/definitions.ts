@@ -8,6 +8,7 @@ export interface Client {
 
 export interface Order {
     id: string;
+    order_name: string;
     date_in: string;
     date_out: string;
     status: string;

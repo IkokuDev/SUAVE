@@ -25,9 +25,10 @@ import { getAiSuggestions } from '@/app/actions';
 import { Sparkles } from 'lucide-react';
 import { Separator } from '../ui/separator';
 import { db } from '@/lib/firebase';
-import { collection, doc, addDoc, setDoc } from 'firebase/firestore';
+import { collection, doc, addDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 const orderSchema = z.object({
+  order_name: z.string().nonempty("Order name is required."),
   date_in: z.string().nonempty("Date in is required."),
   date_out: z.string().nonempty("Date out is required."),
   status: z.string().nonempty("Status is required."),
@@ -56,6 +57,7 @@ const OrderModal = ({ isOpen, setIsOpen, clientId, order }: OrderModalProps) => 
   const form = useForm<OrderFormData>({
     resolver: zodResolver(orderSchema),
     defaultValues: {
+      order_name: order?.order_name || '',
       date_in: order?.date_in || new Date().toISOString().split('T')[0],
       date_out: order?.date_out || '',
       status: order?.status || 'Pending',
@@ -67,12 +69,13 @@ const OrderModal = ({ isOpen, setIsOpen, clientId, order }: OrderModalProps) => 
     },
   });
   
-  const { register, handleSubmit, control, watch, setValue, formState: { errors, isSubmitting } } = form;
+  const { register, handleSubmit, control, watch, setValue, formState: { errors, isSubmitting }, reset } = form;
   const clientInstructions = watch('instructions');
 
   useEffect(() => {
     if (order) {
         setGender(order.gender);
+        setValue('order_name', order.order_name);
         setValue('gender', order.gender);
         setValue('measurements', order.measurements);
         setValue('garment_options', order.garment_options || (order.gender === 'male' ? maleGarmentOptions : {}));
@@ -121,7 +124,7 @@ const OrderModal = ({ isOpen, setIsOpen, clientId, order }: OrderModalProps) => 
             toast({ title: 'Success', description: 'Order created successfully.' });
         }
         
-        form.reset();
+        reset();
         setIsOpen(false);
     } catch (error) {
         console.error('Error saving order:', error);
@@ -140,6 +143,11 @@ const OrderModal = ({ isOpen, setIsOpen, clientId, order }: OrderModalProps) => 
         <form onSubmit={handleSubmit(onSubmit)} className="flex-grow flex flex-col overflow-hidden">
           <ScrollArea className="flex-grow p-6 pr-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div className="md:col-span-3">
+                    <Label htmlFor="order-name">Order Name</Label>
+                    <Input id="order-name" {...register('order_name')} placeholder="e.g. John's Wedding Suit" />
+                    {errors.order_name && <p className="text-red-500 text-xs mt-1">{errors.order_name.message as string}</p>}
+                </div>
                 <div>
                   <Label htmlFor="date-in">Date In</Label>
                   <Input id="date-in" type="date" {...register('date_in')} />
