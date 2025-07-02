@@ -40,11 +40,11 @@ const ClientModal = ({ isOpen, setIsOpen }: ClientModalProps) => {
       await addDoc(collection(db, "clients"), values);
 
       toast({ title: "Success", description: "Client added successfully." });
-      setIsOpen(false);
       form.reset();
+      setIsOpen(false);
     } catch (error) {
       console.error("Error adding client: ", error);
-      toast({ title: "Error", description: "Failed to add client. Make sure your Firebase API keys are correct.", variant: "destructive" });
+      toast({ title: "Error", description: "Failed to add client. Please check your Firestore security rules in the Firebase console.", variant: "destructive" });
     }
   };
 

@@ -121,10 +121,11 @@ const OrderModal = ({ isOpen, setIsOpen, clientId, order }: OrderModalProps) => 
             toast({ title: 'Success', description: 'Order created successfully.' });
         }
         
+        form.reset();
         setIsOpen(false);
     } catch (error) {
         console.error('Error saving order:', error);
-        toast({ title: 'Error', description: 'Failed to save order.', variant: 'destructive' });
+        toast({ title: 'Error', description: 'Failed to save order. Please check your Firestore security rules in the Firebase console.', variant: 'destructive' });
     }
   };
 
