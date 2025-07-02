@@ -15,6 +15,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
+import { db } from '@/lib/firebase';
+import { collection, addDoc } from 'firebase/firestore';
 
 const clientSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -41,24 +43,18 @@ const ClientModal = ({ isOpen, setIsOpen }: ClientModalProps) => {
         return;
     }
     try {
-      const storedClients = localStorage.getItem('clients');
-      const clients = storedClients ? JSON.parse(storedClients) : [];
-      
       const newClient = {
           ...values,
-          id: new Date().toISOString(), // simple unique ID
           createdBy: user.uid,
       };
 
-      clients.push(newClient);
-      localStorage.setItem('clients', JSON.stringify(clients));
+      await addDoc(collection(db, "clients"), newClient);
 
-      toast({ title: "Success", description: "Client added successfully (locally)." });
-      window.dispatchEvent(new Event('clients-updated'));
+      toast({ title: "Success", description: "Client added successfully." });
       setIsOpen(false);
       form.reset();
     } catch (error) {
-      console.error("Error adding client to localStorage: ", error);
+      console.error("Error adding client: ", error);
       toast({ title: "Error", description: "Failed to add client.", variant: "destructive" });
     }
   };

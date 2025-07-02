@@ -7,6 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import ClientModal from './client-modal';
 import { Skeleton } from '../ui/skeleton';
+import { useAuth } from '@/hooks/use-auth';
+import { db } from '@/lib/firebase';
+import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 
 interface ClientListPanelProps {
   setSelectedClient: (client: Client) => void;
@@ -14,36 +17,40 @@ interface ClientListPanelProps {
 }
 
 const ClientListPanel = ({ setSelectedClient, selectedClientId }: ClientListPanelProps) => {
+  const { user } = useAuth();
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    const loadClients = () => {
-        setLoading(true);
-        try {
-            const storedClients = localStorage.getItem('clients');
-            if (storedClients) {
-                setClients(JSON.parse(storedClients));
-            } else {
-                setClients([]);
-            }
-        } catch (error) {
-            console.error("Failed to load clients from localStorage", error);
-            setClients([]);
-        } finally {
-            setLoading(false);
-        }
-    }
-
-    loadClients();
-
-    window.addEventListener('clients-updated', loadClients);
-    return () => {
-        window.removeEventListener('clients-updated', loadClients);
+    if (!user) {
+        setClients([]);
+        setLoading(false);
+        return;
     };
-  }, []);
+
+    setLoading(true);
+    const q = query(
+        collection(db, "clients"), 
+        where("createdBy", "==", user.uid),
+        orderBy("name")
+    );
+
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const clientsData: Client[] = [];
+        querySnapshot.forEach((doc) => {
+            clientsData.push({ id: doc.id, ...doc.data() } as Client);
+        });
+        setClients(clientsData);
+        setLoading(false);
+    }, (error) => {
+        console.error("Error fetching clients:", error);
+        setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
   
   const filteredClients = useMemo(() => {
     return clients.filter(client =>

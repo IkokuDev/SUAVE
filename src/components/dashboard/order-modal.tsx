@@ -24,6 +24,8 @@ import { Checkbox } from '../ui/checkbox';
 import { getAiSuggestions } from '@/app/actions';
 import { Sparkles } from 'lucide-react';
 import { Separator } from '../ui/separator';
+import { db } from '@/lib/firebase';
+import { collection, doc, addDoc, setDoc } from 'firebase/firestore';
 
 const orderSchema = z.object({
   date_in: z.string().nonempty("Date in is required."),
@@ -110,24 +112,18 @@ const OrderModal = ({ isOpen, setIsOpen, clientId, order }: OrderModalProps) => 
   const onSubmit = async (data: OrderFormData) => {
     const orderData = { ...data, ai_suggestions: aiSuggestion };
     try {
-        const storageKey = `orders-${clientId}`;
-        const storedOrders = localStorage.getItem(storageKey);
-        let orders = storedOrders ? JSON.parse(storedOrders) : [];
-
         if (order) { // Editing existing order
-            orders = orders.map((o: Order) => o.id === order.id ? { ...orderData, id: order.id, ai_suggestions: aiSuggestion } : o);
-            toast({ title: 'Success', description: 'Order updated successfully (locally).' });
+            const orderRef = doc(db, 'clients', clientId, 'orders', order.id);
+            await setDoc(orderRef, orderData, { merge: true });
+            toast({ title: 'Success', description: 'Order updated successfully.' });
         } else { // Creating new order
-            const newOrder = { ...orderData, id: new Date().toISOString() };
-            orders.push(newOrder);
-            toast({ title: 'Success', description: 'Order created successfully (locally).' });
+            await addDoc(collection(db, 'clients', clientId, 'orders'), orderData);
+            toast({ title: 'Success', description: 'Order created successfully.' });
         }
         
-        localStorage.setItem(storageKey, JSON.stringify(orders));
-        window.dispatchEvent(new Event(`orders-updated-${clientId}`));
         setIsOpen(false);
     } catch (error) {
-        console.error('Error saving order to localStorage:', error);
+        console.error('Error saving order:', error);
         toast({ title: 'Error', description: 'Failed to save order.', variant: 'destructive' });
     }
   };
